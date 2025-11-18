@@ -44,10 +44,14 @@ npm --version
 
 1. **Clone or download this repository**
 
+```bash
+ git clone https://github.com/HTTPayer/base-workshop
+```
+
 2. **Navigate to the project directory:**
 
    ```bash
-   cd E:\Projects\httpayer\base-workshop\event1
+   cd path-to-project
    ```
 
 3. **Install dependencies:**
@@ -63,7 +67,7 @@ npm --version
    - `dotenv` - Environment variable management
    - `typescript`, `tsx` - TypeScript support
 
-4. **Compile the project (optional):**
+4. **Compile the project:**
    ```bash
    npm run build
    ```

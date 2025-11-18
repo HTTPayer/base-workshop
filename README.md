@@ -2,7 +2,7 @@
 
 Colección de scripts de demostración para el protocolo x402 (HTTP 402 Payment Required) en Base blockchain.
 
-## 📋 Tabla de Contenidos
+## Tabla de Contenidos
 
 - [Requisitos Previos](#requisitos-previos)
 - [Instalación](#instalación)
@@ -12,13 +12,14 @@ Colección de scripts de demostración para el protocolo x402 (HTTP 402 Payment 
 - [Directorios de Guardado](#directorios-de-guardado)
 - [Solución de Problemas](#solución-de-problemas)
 
-## 🔧 Requisitos Previos
+## Requisitos Previos
 
 ### Node.js y npm
 
 Este proyecto requiere Node.js (versión 18 o superior) y npm (incluido con Node.js).
 
 **Verificar si ya tienes Node.js instalado:**
+
 ```bash
 node --version
 npm --version
@@ -29,6 +30,7 @@ npm --version
 - **Windows**: Descarga el instalador desde [nodejs.org](https://nodejs.org/) y ejecútalo
 - **macOS**: Usa Homebrew: `brew install node`
 - **Linux**: Usa tu gestor de paquetes:
+
   ```bash
   # Ubuntu/Debian
   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -38,34 +40,38 @@ npm --version
   sudo dnf install nodejs
   ```
 
-## 📦 Instalación
+## Instalación
 
 1. **Clona o descarga este repositorio**
 
 2. **Navega al directorio del proyecto:**
+
    ```bash
    cd E:\Projects\httpayer\base-workshop\event1
    ```
 
 3. **Instala las dependencias:**
+
    ```bash
    npm install
    ```
 
    Esto instalará todos los paquetes necesarios:
+
    - `x402-fetch` - SDK para pagos x402
    - `viem` - Biblioteca de Ethereum
    - `dotenv` - Gestión de variables de entorno
    - `typescript`, `tsx` - Soporte de TypeScript
 
-4. **Compila el proyecto (opcional):**
+4. **Compila el proyecto:**
    ```bash
    npm run build
    ```
 
-## ⚙️ Configuración
+## Configuración
 
 1. **Crea un archivo `.env` basado en la plantilla:**
+
    ```bash
    # Unix/Mac/Linux
    cp .env.sample .env
@@ -75,6 +81,7 @@ npm --version
    ```
 
 2. **Edita `.env` y configura tus valores:**
+
    ```env
    PRIVATE_KEY=tu_clave_privada_aqui
    LLM_SERVER=http://localhost:3000
@@ -92,7 +99,7 @@ npm --version
    - **Airdrop**: Si ejecutas este proyecto durante el workshop programado de Base, los hosts proporcionarán USDC a tu dirección.
    - **Comprar USDC**: Usa cualquiera de los proveedores listados aquí para comprar USDC: [usdc.com/providers](https://latam.usdc.com/providers)
 
-## 🔑 Generación de Cuentas
+## Generación de Cuentas
 
 Si necesitas crear nuevas cuentas de Ethereum para pruebas:
 
@@ -101,13 +108,14 @@ npm run generate:evm:accounts
 ```
 
 Este script:
+
 - Genera nuevas cuentas de Ethereum con claves privadas
 - Guarda las cuentas en `./accounts/`
 - Muestra las direcciones y claves privadas generadas
 
 Una vez ejecutado, copia la clave privada y pégala en .env como valor para "PRIVATE_KEY".
 
-## 🚀 Scripts de Demostración
+## Scripts de Demostración
 
 ### Demo 01: Gloria AI - Solicitud GET Básica con x402
 
@@ -116,17 +124,20 @@ npm run demo:01
 ```
 
 **¿Qué hace?**
+
 - Realiza una solicitud GET simple a la API de Gloria AI
 - Implementa pagos x402 usando `wrapFetchWithPayment`
 - Decodifica y muestra los detalles de pago (monto, beneficiario, hash de transacción)
 - Guarda la respuesta automáticamente en `./responses/` con timestamp
 
 **Tecnologías clave:**
+
 - `x402-fetch`: Wrapper de fetch habilitado para pagos
 - `createSigner`: Crea un firmante para Base blockchain
 - `decodeXPaymentResponse`: Decodifica headers de pago x402
 
 **Flujo:**
+
 1. Configura el firmante con tu `PRIVATE_KEY`
 2. Envuelve `fetch` con capacidades de pago
 3. Hace la solicitud - el pago se maneja automáticamente
@@ -152,6 +163,7 @@ npm run demo:04
 ```
 
 **¿Qué hace?**
+
 - Demuestra una solicitud POST con pagos x402
 - Similar a demo_01 pero con método POST
 - Guarda respuesta usando la utilidad `save_resp`
@@ -163,12 +175,14 @@ npm run demo:05
 ```
 
 **¿Qué hace?**
+
 - Genera análisis de "Smart Money Intelligence"
 - Combina datos de múltiples fuentes (Nansen, Heurist, etc.)
 - Usa LLM para crear resumen analítico
 - Guarda datos estructurados en `./website/data.json`
 
 **Estructura de salida:**
+
 ```json
 {
   "summary": "Resumen generado por LLM...",
@@ -177,8 +191,12 @@ npm run demo:05
     "data_sources": ["nansen", "heurist"],
     "analysis_date": "2024-01-15"
   },
-  "nansen": { /* datos de Nansen */ },
-  "heurist": { /* datos de Heurist */ }
+  "nansen": {
+    /* datos de Nansen */
+  },
+  "heurist": {
+    /* datos de Heurist */
+  }
 }
 ```
 
@@ -230,6 +248,7 @@ npm run demo:07
 ```
 
 **¿Qué hace?**
+
 - Despliega contenido estático en webdb.site (almacenamiento descentralizado)
 - Maneja cargas de larga duración con timeout de 120 segundos
 - Implementa lógica de reintentos (3 intentos máximo) con backoff progresivo
@@ -237,6 +256,7 @@ npm run demo:07
 - Guarda respuesta de despliegue con URL del sitio web
 
 **Características especiales:**
+
 - `AbortController` para timeouts
 - Reintentos automáticos en caso de fallo
 - Visualización del progreso de carga
@@ -258,6 +278,7 @@ npm run demo:08
 - Guarda registro de entidad en `./arkiv/` para referencia futura
 
 **Flujo detallado:**
+
 1. Verifica que exista `./website/data.json` (ejecuta demo_05 primero si no existe)
 2. Extrae `websiteData.summary` de los datos
 3. Codifica a hexadecimal con `encodePayload()`
@@ -265,12 +286,13 @@ npm run demo:08
    - `fetchWithPay` - habilitado para x402
    - Payload hexadecimal
    - Atributos como strings (requerido por Arkiv)
-   - TTL: 1 año (86400 * 365 segundos)
+   - TTL: 1 año (86400 \* 365 segundos)
 5. Recibe `entity_key` y `tx_hash`
 6. Verifica con `readEntity()`
 7. Guarda registro local con toda la metadata
 
 **Atributos guardados:**
+
 - `generated_at`: Timestamp de generación
 - `data_sources`: Fuentes de datos (como JSON string)
 - `analysis_date`: Fecha del análisis
@@ -290,6 +312,7 @@ npm run demo:08 custom '{"mi": "dato"}'
 ```
 
 **Salida:**
+
 ```
 🔑 Entity Key: 0x1234...abcd
 🔗 Transaction Hash: 0x5678...ef90
@@ -297,11 +320,12 @@ npm run demo:08 custom '{"mi": "dato"}'
 💾 Entity record saved to: ./arkiv/0x1234...abcd.json
 ```
 
-## 📂 Directorios de Guardado
+## Directorios de Guardado
 
 El proyecto crea y utiliza varios directorios para guardar datos:
 
 ### `./responses/`
+
 - **Propósito**: Almacena respuestas HTTP de las APIs con x402
 - **Formato**: JSON con timestamp
 - **Nombrado**: `{prefix}_{nombre}_{timestamp}.json`
@@ -314,6 +338,7 @@ El proyecto crea y utiliza varios directorios para guardar datos:
 - **Ejemplo**: `demo01_gloria-ai_2024-01-15T10-30-45-123Z.json`
 
 ### `./website/`
+
 - **Propósito**: Almacena datos estructurados para generación de sitios web
 - **Archivo principal**: `data.json`
 - **Generado por**: demo_05
@@ -321,6 +346,7 @@ El proyecto crea y utiliza varios directorios para guardar datos:
 - **Usado por**: demo_08 (para guardar en Arkiv)
 
 ### `./arkiv/`
+
 - **Propósito**: Registros locales de entidades guardadas en Arkiv blockchain
 - **Formato**: JSON con entity_key como nombre de archivo
 - **Generado por**: demo_08
@@ -334,27 +360,31 @@ El proyecto crea y utiliza varios directorios para guardar datos:
 - **Ejemplo**: `0x1234...abcd.json`
 
 ### `./accounts/`
+
 - **Propósito**: Cuentas de Ethereum generadas localmente
 - **Generado por**: `npm run generate:evm:accounts`
 - **Formato**: JSON con dirección, clave privada, etc.
-- **⚠️ Seguridad**: Nunca compartas estos archivos ni los subas a Git
+- **Seguridad**: Nunca compartas estos archivos ni los subas a Git
 
 ### `./deployments/`
+
 - **Propósito**: Registros de despliegues (contratos, sitios web)
 - **Generado por**: Scripts de despliegue
 - **Contiene**: Direcciones, URLs, configuración de despliegue
 
 ### `./dist/`
+
 - **Propósito**: Código TypeScript compilado
 - **Generado por**: `npm run build`
 - **No se versiona**: Excluido en `.gitignore`
 
 ### `./node_modules/`
+
 - **Propósito**: Dependencias de npm
 - **Generado por**: `npm install`
 - **No se versiona**: Excluido en `.gitignore`
 
-## 🔍 Utilidades
+## Utilidades
 
 ### `scripts/utils/save_resp.ts`
 
@@ -363,6 +393,7 @@ Utilidad compartida para guardar respuestas HTTP con timestamp automático.
 **Funciones:**
 
 1. **`saveResponse(response, name, paymentInfo, options?)`**
+
    - Guarda respuesta completa con metadata
    - Incluye información de pago x402
    - Añade headers y timing
@@ -372,14 +403,16 @@ Utilidad compartida para guardar respuestas HTTP con timestamp automático.
    - Más ligero, para datos simples
 
 **Opciones:**
+
 - `dir`: Directorio personalizado (default: `./responses`)
 - `prefix`: Prefijo para nombre de archivo (default: `""`)
 
-## ❗ Solución de Problemas
+## Solución de Problemas
 
 ### Error: "Cannot find module 'x402-fetch'"
 
 **Solución:**
+
 ```bash
 npm install
 ```
@@ -391,6 +424,7 @@ Asegúrate de que `tsconfig.json` tenga `"moduleResolution": "bundler"`.
 **Causa**: Usar `createWalletClient` de viem en lugar de `createSigner` de x402-fetch.
 
 **Solución**: Siempre usa:
+
 ```typescript
 import { createSigner } from "x402-fetch";
 const signer = await createSigner("base", PRIVATE_KEY as `0x${string}`);
@@ -401,6 +435,7 @@ const signer = await createSigner("base", PRIVATE_KEY as `0x${string}`);
 **Causa**: Carga muy grande o conexión lenta.
 
 **Solución**: El script ya incluye:
+
 - Timeout de 120 segundos
 - 3 reintentos automáticos
 - Backoff progresivo
@@ -412,6 +447,7 @@ Si persiste, verifica tu conexión de internet o el tamaño de los archivos a su
 **Causa**: Atributos en Spuro deben ser strings.
 
 **Solución**: Ya está implementado - todos los atributos se convierten:
+
 ```typescript
 attributes: {
   data_sources: JSON.stringify(array),  // Arrays → JSON string
@@ -425,6 +461,7 @@ attributes: {
 **Causa**: Falta el archivo `./website/data.json`.
 
 **Solución**: Ejecuta demo_05 primero:
+
 ```bash
 npm run demo:05
 npm run demo:08
@@ -441,11 +478,13 @@ npm run demo:08
 ### El script se cuelga sin error
 
 **Posibles causas**:
+
 1. Falta el archivo `.env`
 2. `PRIVATE_KEY` inválida
 3. Problemas de red
 
 **Pasos de diagnóstico**:
+
 ```bash
 # 1. Verifica que .env existe
 cat .env
@@ -455,7 +494,7 @@ cat .env
 npm run demo:01
 ```
 
-## 🔗 Recursos Adicionales
+## Recursos Adicionales
 
 - **Documentación x402**: [GitHub x402](https://github.com/x402)
 - **HTTPayer**: [GitHub HTTPayer](https://github.com/HTTPayer)
@@ -463,13 +502,13 @@ npm run demo:01
 - **Base Network**: [docs.base.org](https://docs.base.org)
 - **Viem Documentation**: [viem.sh](https://viem.sh)
 
-## 🛡️ Seguridad
+## Seguridad
 
 - **NUNCA** subas tu archivo `.env` a GitHub
 - **NUNCA** uses tu wallet principal para pruebas
 - El archivo `.gitignore` está configurado para proteger archivos sensibles
 
-## 📝 Notas
+## Notas
 
 - Todos los scripts usan **Base** mainnet por defecto
 - Los pagos x402 son automáticos una vez configurado el firmante
@@ -477,7 +516,7 @@ npm run demo:01
 - Spuro requiere pagos x402 para todas las operaciones (lectura y escritura)
 - Arkiv blockchain proporciona almacenamiento descentralizado e inmutable
 
-## 📄 Licencia
+## Licencia
 
 TBA
 
