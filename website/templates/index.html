@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Money Intelligence Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Smart Money Intelligence</h1>
+            <p class="subtitle">Real-time cryptocurrency flow analysis powered by HTTPayer</p>
+            <div id="timestamp" class="timestamp"></div>
+        </header>
+
+        <main>
+            <!-- Summary Section -->
+            <section class="card summary-section">
+                <h2>AI Analysis Summary</h2>
+                <div id="summary" class="summary-content">
+                    <div class="loading">Loading analysis...</div>
+                </div>
+            </section>
+
+            <!-- Nansen Smart Money Data -->
+            <section class="card">
+                <h2>Smart Money Token Flows</h2>
+                <p class="section-description">Net flow data from Nansen showing where smart money is moving</p>
+                <div id="nansen-data">
+                    <div class="loading">Loading token data...</div>
+                </div>
+            </section>
+
+            <!-- Heurist News Analysis -->
+            <section class="card">
+                <h2>Market News & Analysis</h2>
+                <p class="section-description">Recent news and insights from Heurist AI</p>
+                <div id="heurist-data">
+                    <div class="loading">Loading news...</div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Powered by <a href="https://httpayer.com" target="_blank">HTTPayer</a> |
+               Data from <a href="https://nansen.ai" target="_blank">Nansen</a> &
+               <a href="https://heurist.ai" target="_blank">Heurist</a></p>
+            <p class="disclaimer">This is for informational purposes only. Not financial advice.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

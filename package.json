@@ -1,0 +1,47 @@
+{
+  "name": "base-workshop",
+  "version": "1.0.0",
+  "description": "Intro to x402; test scripts to get you started, just enter your private key",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "demo:01": "tsx scripts/demo_01.ts",
+    "demo:02": "tsx scripts/demo_02_.ts",
+    "demo:03": "tsx scripts/demo_03.ts",
+    "demo:04": "tsx scripts/demo_04.ts",
+    "demo:05": "tsx scripts/demo_05.ts",
+    "demo:06": "tsx scripts/demo_06.ts",
+    "demo:07": "tsx scripts/demo_07.ts",
+    "demo:08": "tsx scripts/demo_08.ts",
+    "generate:evm:accounts": "tsx scripts/generate-evm-accounts.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HTTPayer/base-workshop.git"
+  },
+  "keywords": [
+    "x402",
+    "base",
+    "web3"
+  ],
+  "author": "HTTPayer",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HTTPayer/base-workshop/issues"
+  },
+  "homepage": "https://github.com/HTTPayer/base-workshop#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "viem": "^2.39.2",
+    "x402-fetch": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/form-data": "^2.5.2",
+    "@types/node": "^24.10.1",
+    "@types/node-fetch": "^2.6.13",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
