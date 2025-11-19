@@ -4,32 +4,40 @@ Multi-API calls + LLM with varying networks, methods, and payloads, powered by H
 
 import { wrapFetchWithPayment, decodeXPaymentResponse, createSigner } from "x402-fetch";
 import dotenv from "dotenv";
+import kleur from "kleur";
 import { saveResponse } from "./utils/save_resp.js";
+import { logStep, logInfo, logSuccess, logError } from "./utils/format_output.js";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 
 dotenv.config();
 
+console.log();
+console.log(kleur.bold().cyan("Demo 06: Multi-API Orchestration"));
+console.log(kleur.bold().white("Nansen + Heurist + LLM Chat + Translation"));
+console.log();
+
 let PRIVATE_KEY = process.env.PRIVATE_KEY || "";
   if (!PRIVATE_KEY.startsWith("0x")) {
     PRIVATE_KEY = `0x${PRIVATE_KEY}`;
   }
-console.log("[client] PRIVATE_KEY detected:", PRIVATE_KEY ? true : false);
+
+logInfo("Private key detected", PRIVATE_KEY ? "✓" : "✗");
 
 // Create a signer using x402's createSigner helper
 const signer = await createSigner("base", PRIVATE_KEY as `0x${string}`);
 
-const LLM_SERVER = process.env.LLM_SERVER || "http://localhost:3000"
+const LLM_SERVER = process.env.LLM_SERVER || "https://api.httpayer.com/llm"
 const SERVER_API_KEY = process.env.SERVER_API_KEY || "";
 if (!SERVER_API_KEY) {
-  console.warn("[client] Warning: SERVER_API_KEY is not set. LLM server requests may fail.");
+  console.log(kleur.yellow("⚠ Warning: SERVER_API_KEY is not set. LLM server requests may fail."));
 }
 
 // Extract the account address for logging
 // Signer can be either a SignerWallet (with .account.address) or LocalAccount (with .address directly)
 const accountAddress = "account" in signer ? signer.account?.address : signer.address;
-console.log("[client] Using account address:", accountAddress || "N/A");
-console.log("[client] Using chain: Base");
+logInfo("Account address", accountAddress || "N/A");
+logInfo("Chain", "Base");
 
 // Wrap the fetch function with payment handling
 const fetchWithPay = wrapFetchWithPayment(fetch, signer);
@@ -287,20 +295,92 @@ async function translateText(fetchWithPay: typeof fetch, text: any) {
 // Main execution function
 async function runDemo() {
   try {
-    console.log("\n=== Step 1: Get Nansen Smart Money Data ===");
+    logStep(1, "Fetching Nansen Smart Money Data");
     const nansenData = await getNansenData(fetchWithPay);
 
-    console.log("\n=== Step 2: Get Heurist News Search ===");
+    logStep(2, "Searching crypto news with Heurist AI");
     const heuristData = await getHeuristSearch(fetchWithPay, nansenData);
 
-    console.log("\n=== Step 3: Summarize with LLM (with translation) ===");
+    logStep(3, "Generating analysis with LLM + Translation");
     const summary = await summarizeWithLLM(fetchWithPay, nansenData, heuristData, true); // translate = true by default
 
-    console.log("\n=== Final Result ===");
-    console.log(JSON.stringify(summary, null, 2));
+    console.log();
+    console.log(kleur.bold().green("=== Analysis Complete ==="));
+
+    // Helper function to extract text from response
+    const extractText = (obj: any): string => {
+      // If it's already a string, check if it's JSON that needs parsing
+      if (typeof obj === 'string') {
+        try {
+          const parsed = JSON.parse(obj);
+          return extractText(parsed); // Recursively extract from parsed object
+        } catch {
+          // Not JSON, return as-is
+          return obj;
+        }
+      }
+
+      // If it's an object, try to extract from common field names
+      if (obj && typeof obj === 'object') {
+        if (obj.response) return extractText(obj.response);
+        if (obj.text) return extractText(obj.text);
+        if (obj.content) return extractText(obj.content);
+        if (obj.message) return extractText(obj.message);
+      }
+
+      return JSON.stringify(obj, null, 2);
+    };
+
+    // Extract and display original and translated text
+    if (summary && typeof summary === 'object') {
+      const summaryObj = summary as any;
+      const original = summaryObj.original || summaryObj.response || summary;
+      const translated = summaryObj.translated || summaryObj.translation;
+
+      console.log();
+      console.log(kleur.bold().cyan("--- Original (English) ---"));
+      const originalText = extractText(original);
+      // Truncate for console display
+      const truncated = originalText.substring(0, 500);
+      console.log(kleur.white(truncated));
+      if (originalText.length > 500) {
+        console.log(kleur.dim("... (truncated, full text saved to file)"));
+      }
+
+      if (translated) {
+        console.log();
+        console.log(kleur.bold().cyan("--- Translated (Spanish) ---"));
+        const translatedText = extractText(translated);
+        // Truncate for console display
+        const truncatedTranslated = translatedText.substring(0, 500);
+        console.log(kleur.white(truncatedTranslated));
+        if (translatedText.length > 500) {
+          console.log(kleur.dim("... (truncated, full text saved to file)"));
+        }
+
+        // Save both as markdown files
+        const outputDir = "./output";
+        if (!existsSync(outputDir)) {
+          mkdirSync(outputDir, { recursive: true });
+        }
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const originalPath = join(outputDir, `demo06_original_${timestamp}.md`);
+        const translatedPath = join(outputDir, `demo06_translated_${timestamp}.md`);
+
+        writeFileSync(originalPath, originalText, "utf-8");
+        writeFileSync(translatedPath, translatedText, "utf-8");
+
+        console.log();
+        logSuccess(`Original saved to: ${kleur.cyan(originalPath)}`);
+        logSuccess(`Translated saved to: ${kleur.cyan(translatedPath)}`);
+      }
+    } else {
+      console.log(JSON.stringify(summary, null, 2));
+    }
 
     // Save combined data for website
-    console.log("\n=== Step 4: Saving data for website ===");
+    logStep(4, "Saving combined data for website");
     const websiteDir = "./website";
     if (!existsSync(websiteDir)) {
       mkdirSync(websiteDir, { recursive: true });
@@ -319,10 +399,10 @@ async function runDemo() {
 
     const dataPath = join(websiteDir, "data.json");
     writeFileSync(dataPath, JSON.stringify(websiteData, null, 2), "utf-8");
-    console.log(`✅ Website data saved to: ${dataPath}`);
+    logSuccess(`Website data saved to: ${kleur.cyan(dataPath)}`);
 
   } catch (error) {
-    console.error("[client] Demo failed:", error);
+    logError("Demo failed", error);
   }
 }
 

@@ -1,188 +1,261 @@
 /*
-Deploy Smart Money Intelligence website to webdb.site
-Reads website data and templates, then deploys via webdb.site API
+Save JSON response summaries to Arkiv via Spuro SDK
+This script takes response data and stores it permanently on Arkiv blockchain
 */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
-import FormData from "form-data";
-import fetch from "node-fetch";
+import dotenv from "dotenv";
+import kleur from "kleur";
+import { wrapFetchWithPayment, decodeXPaymentResponse, createSigner } from "x402-fetch";
+import { logStep, logInfo, logSuccess, logError } from "./utils/format_output.js";
+import {
+  createEntity,
+  readEntity,
+  encodePayload,
+  decodePayload,
+  type CreateEntityResponse,
+  type ReadEntityResponse
+} from "../src/spuroSdk.js";
 
-const WEBDB_API = "https://webdb.site/api";
+dotenv.config();
 
-async function deployWebsite() {
-  console.log("\n════════════════════════════════════════════════════════════════");
-  console.log("🌐 Deploying Smart Money Intelligence to webdb.site");
-  console.log("════════════════════════════════════════════════════════════════\n");
+console.log();
+console.log(kleur.bold().cyan("Demo 07: Save to Arkiv Blockchain"));
+console.log(kleur.bold().white("Permanent storage via Spuro SDK"));
+console.log();
 
-  // Check if data.json exists
-  const dataPath = "./website/data.json";
-  if (!existsSync(dataPath)) {
-    console.error("❌ Error: data.json not found. Run demo_05 first to generate data.");
-    process.exit(1);
-  }
+const SPURO_API_URL = process.env.SPURO_API_URL || "https://qu01n0u34hdsh6ajci1ie9trq8.ingress.akash-palmito.org";
 
-  // Generate unique site ID based on timestamp
-  const timestamp = Date.now();
-  const siteId = `smartmoney-${timestamp}`;
+// Setup x402 payment-enabled fetch
+let PRIVATE_KEY = process.env.PRIVATE_KEY || "";
+if (!PRIVATE_KEY.startsWith("0x")) {
+  PRIVATE_KEY = `0x${PRIVATE_KEY}`;
+}
 
-  console.log(`📦 Site ID: ${siteId}`);
-  console.log(`🔗 Target URL: https://${siteId}.webdb.site\n`);
+logInfo("Private key detected", PRIVATE_KEY ? "✓" : "✗");
+
+// Create a signer using x402's createSigner helper
+const signer = await createSigner("base", PRIVATE_KEY as `0x${string}`);
+
+// Extract the account address for logging
+const accountAddress = "account" in signer ? signer.account?.address : signer.address;
+logInfo("Account address", accountAddress || "N/A");
+logInfo("Chain", "Base");
+logInfo("Spuro API", SPURO_API_URL);
+
+// Wrap the fetch function with payment handling
+const fetchWithPay = wrapFetchWithPayment(fetch, signer);
+
+async function saveToArkiv(data: any, options: {
+  ttl?: number;
+  attributes?: Record<string, any>;
+  description?: string;
+} = {}) {
+  const {
+    ttl = 86400 * 365, // 1 year default
+    attributes = {},
+    description = "Response data"
+  } = options;
+
+  console.log(`\n📦 Preparing to save ${description} to Arkiv...`);
+
+  // Convert data to JSON string
+  const jsonPayload = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+
+  // Encode to hex for Spuro
+  const hexPayload = encodePayload(jsonPayload);
+
+  console.log(`   📊 Payload size: ${(jsonPayload.length / 1024).toFixed(2)} KB`);
+  console.log(`   🔢 Hex size: ${(hexPayload.length / 1024).toFixed(2)} KB`);
+  console.log(`   ⏱️  TTL: ${ttl} seconds (${(ttl / 86400).toFixed(1)} days)`);
 
   try {
-    // Read all files
-    console.log("📂 Reading files...");
-    const indexHtml = readFileSync("./website/templates/index.html", "utf-8");
-    const styleCss = readFileSync("./website/templates/style.css", "utf-8");
-    const scriptJs = readFileSync("./website/templates/script.js", "utf-8");
-    const dataJson = readFileSync(dataPath, "utf-8");
+    console.log(`\n🚀 Uploading to Arkiv blockchain via Spuro (with x402 payment)...`);
 
-    // Helper to format bytes
-    const formatBytes = (bytes: number) => {
-      if (bytes < 1024) return `${bytes} B`;
-      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-      return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-    };
-
-    // Calculate sizes
-    const sizes = {
-      indexHtml: Buffer.from(indexHtml).length,
-      styleCss: Buffer.from(styleCss).length,
-      scriptJs: Buffer.from(scriptJs).length,
-      // dataJson: Buffer.from(dataJson).length
-    };
-    const totalSize = Object.values(sizes).reduce((a, b) => a + b, 0);
-
-    // Create FormData
-    const formData = new FormData();
-    formData.append('files', Buffer.from(indexHtml), { filename: 'index.html', contentType: 'text/html' });
-    formData.append('files', Buffer.from(styleCss), { filename: 'style.css', contentType: 'text/css' });
-    formData.append('files', Buffer.from(scriptJs), { filename: 'script.js', contentType: 'application/javascript' });
-    // formData.append('files', Buffer.from(dataJson), { filename: 'data.json', contentType: 'application/json' });
-
-    console.log("✅ Files loaded:");
-    console.log(`   - index.html (${formatBytes(sizes.indexHtml)})`);
-    console.log(`   - style.css (${formatBytes(sizes.styleCss)})`);
-    console.log(`   - script.js (${formatBytes(sizes.scriptJs)})`);
-    // console.log(`   - data.json (${formatBytes(sizes.dataJson)})`);
-    console.log(`   📦 Total size: ${formatBytes(totalSize)}\n`);
-
-    // Upload to webdb.site
-    console.log("🚀 Uploading to webdb.site...");
-    const uploadUrl = `${WEBDB_API}/upload/${siteId}`;
-
-    // Add timeout and retry logic
-    const TIMEOUT_MS = 120000; // 120 seconds
-    const MAX_RETRIES = 3;
-    let lastError: Error | null = null;
-    let response: any = null;
-
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        if (attempt > 1) {
-          console.log(`🔄 Retry attempt ${attempt}/${MAX_RETRIES}...`);
-          // Wait a bit before retrying
-          await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-        response = await fetch(uploadUrl, {
-          method: 'POST',
-          body: formData,
-          headers: formData.getHeaders(),
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-
-          // Check if it's a timeout error (524)
-          if (response.status === 524) {
-            throw new Error(`Server timeout (524) - Upload took too long. This might be due to large files or server load.`);
-          }
-
-          throw new Error(`Upload failed: ${response.status} ${response.statusText}\n${errorText}`);
-        }
-
-        // Success! Break out of retry loop
-        lastError = null;
-        break;
-
-      } catch (error: any) {
-        lastError = error;
-
-        // If it's an abort error (our timeout), retry
-        if (error.name === 'AbortError') {
-          console.log(`⏱️  Request timed out after ${TIMEOUT_MS / 1000}s`);
-          if (attempt < MAX_RETRIES) {
-            continue;
-          }
-        }
-
-        // If it's a 524 timeout, retry
-        if (error.message?.includes('524') || error.message?.includes('timeout')) {
-          console.log(`⏱️  Server timeout detected`);
-          if (attempt < MAX_RETRIES) {
-            continue;
-          }
-        }
-
-        // For other errors, don't retry
-        throw error;
+    const result: CreateEntityResponse = await createEntity(
+      fetchWithPay, // Use payment-enabled fetch
+      SPURO_API_URL,
+      {
+        payload: hexPayload,
+        content_type: 'application/json',
+        attributes: {
+          ...attributes,
+          saved_at: new Date().toISOString(),
+          source: "demo_08"
+        },
+        ttl
       }
-    }
+    );
 
-    if (lastError) {
-      throw lastError;
-    }
+    console.log(`✅ Saved to Arkiv blockchain!`);
+    console.log(`   🔑 Entity Key: ${result.entity_key}`);
+    console.log(`   🔗 Transaction Hash: ${result.tx_hash}`);
 
-    const result = await response.json();
-
-    console.log("✅ Deployment successful!\n");
-    console.log("════════════════════════════════════════════════════════════════");
-    console.log(`🌐 Live URL: ${result.url || `https://${siteId}.webdb.site`}`);
-    console.log("════════════════════════════════════════════════════════════════\n");
-
-    // Display deployment details
-    console.log("📋 Deployment Details:");
-    console.log(JSON.stringify(result, null, 2));
-    console.log("");
-
-    // Save deployment info
-    const deploymentsDir = "./deployments";
-    if (!existsSync(deploymentsDir)) {
-      mkdirSync(deploymentsDir, { recursive: true });
-    }
-
-    const deploymentInfo = {
-      siteId: result.siteId || siteId,
-      url: result.url || `https://${siteId}.webdb.site`,
-      deployed_at: new Date().toISOString(),
-      files: result.files || [
-        { path: "index.html" },
-        { path: "style.css" },
-        { path: "script.js" },
-        { path: "data.json" }
-      ],
-      response: result
-    };
-
-    // Save by siteId:url format
-    const deploymentFile = join(deploymentsDir, `${deploymentInfo.siteId}.json`);
-    writeFileSync(deploymentFile, JSON.stringify(deploymentInfo, null, 2), "utf-8");
-
-    console.log(`💾 Deployment info saved to: ${deploymentFile}`);
-    console.log("\n✨ Your Smart Money Intelligence dashboard is now live!");
+    return result;
 
   } catch (error) {
-    console.error("\n❌ Deployment failed:", error);
-    process.exit(1);
+    logError("Failed to save to Arkiv", error);
+    throw error;
   }
 }
 
-// Run deployment
-deployWebsite().catch(console.error);
+async function readFromArkiv(entityKey: string) {
+  console.log();
+  console.log(kleur.cyan("📖 Reading from Arkiv..."));
+  logInfo("Entity Key", entityKey);
+
+  try {
+    const result: ReadEntityResponse = await readEntity(
+      fetchWithPay, // Use payment-enabled fetch
+      SPURO_API_URL,
+      entityKey
+    );
+
+    logSuccess("Retrieved from Arkiv blockchain!");
+    logInfo("Owner", result.entity.owner);
+    logInfo("Content Type", result.entity.content_type);
+
+    // Decode the hex payload
+    const decodedData = decodePayload(result.data);
+
+    return {
+      ...result,
+      decodedData
+    };
+
+  } catch (error) {
+    logError("Failed to read from Arkiv", error);
+    throw error;
+  }
+}
+
+async function saveLatestResponse() {
+  console.log();
+  logStep(1, "Loading Smart Money data from demo_06");
+
+  // Check if website data.json exists
+  const dataPath = "./website/data.json";
+  if (!existsSync(dataPath)) {
+    logError("No website data found at ./website/data.json");
+    console.log(kleur.dim("💡 Run demo:06 first to generate the Smart Money Intelligence data.\n"));
+    process.exit(1);
+  }
+
+  logInfo("Data source", dataPath);
+
+  // Read the website data file
+  const websiteData = JSON.parse(readFileSync(dataPath, 'utf-8'));
+
+  // Extract the summary (which is the LLM-generated analysis)
+  const summary = websiteData.summary;
+
+  // Save to Arkiv
+  logStep(2, "Saving to Arkiv blockchain via Spuro");
+  // Note: All attribute values must be strings for Arkiv
+  const arkivResult = await saveToArkiv(summary, {
+    description: "Smart Money Intelligence Summary",
+    attributes: {
+      generated_at: websiteData.generated_at || "",
+      data_sources: JSON.stringify(websiteData.metadata?.data_sources || []),
+      analysis_date: websiteData.metadata?.analysis_date || "",
+      has_nansen_data: String(!!websiteData.nansen),
+      has_heurist_data: String(!!websiteData.heurist)
+    },
+    ttl: 86400 * 365 // 1 year
+  });
+
+  // Verify by reading it back
+  logStep(3, "Verifying storage on blockchain");
+  const verifyResult = await readFromArkiv(arkivResult.entity_key);
+
+  // Parse the decoded payload to show it (truncated)
+  const storedData = JSON.parse(verifyResult.decodedData);
+  console.log();
+  console.log(kleur.bold().cyan("📋 Stored Data (preview):"));
+  const preview = JSON.stringify(storedData, null, 2).substring(0, 500);
+  console.log(kleur.dim(preview));
+  if (JSON.stringify(storedData).length > 500) {
+    console.log(kleur.dim("... (truncated)"));
+  }
+
+  // Save entity key for later reference
+  const arkivDir = "./arkiv";
+  if (!existsSync(arkivDir)) {
+    mkdirSync(arkivDir, { recursive: true });
+  }
+
+  const entityRecord = {
+    entity_key: arkivResult.entity_key,
+    tx_hash: arkivResult.tx_hash,
+    source_file: "website/data.json",
+    saved_at: new Date().toISOString(),
+    spuro_url: `${SPURO_API_URL}/entities/${arkivResult.entity_key}`,
+    owner: verifyResult.entity.owner,
+    generated_at: websiteData.generated_at,
+    data_sources: websiteData.metadata?.data_sources || [],
+    summary: storedData
+  };
+
+  const recordFile = join(arkivDir, `${arkivResult.entity_key}.json`);
+  writeFileSync(recordFile, JSON.stringify(entityRecord, null, 2), 'utf-8');
+
+  console.log();
+  logSuccess(`Entity record saved to: ${kleur.cyan(recordFile)}`);
+
+  console.log();
+  console.log(kleur.bold().green("✅ Success! Saved to Arkiv blockchain"));
+  console.log();
+  logInfo("Spuro URL", `${SPURO_API_URL}/entities/${arkivResult.entity_key}`);
+  logInfo("Entity Key", arkivResult.entity_key);
+  logInfo("Transaction Hash", arkivResult.tx_hash);
+  console.log(`\n💡 This data is now permanently stored on the Arkiv blockchain!`);
+  console.log(`   You can retrieve it anytime using the entity key.\n`);
+}
+
+// Alternative: Save specific data directly
+async function saveCustomData(data: any, description: string) {
+  console.log("\n════════════════════════════════════════════════════════════════");
+  console.log(`💾 Save Custom Data: ${description}`);
+  console.log("════════════════════════════════════════════════════════════════\n");
+
+  const arkivResult = await saveToArkiv(data, {
+    description,
+    attributes: {
+      type: "custom_data"
+    }
+  });
+
+  console.log(`\n✅ Saved to Arkiv via Spuro!`);
+  console.log(`🔑 Entity Key: ${arkivResult.entity_key}`);
+  console.log(`🔗 URL: ${SPURO_API_URL}/entities/${arkivResult.entity_key}\n`);
+
+  return arkivResult.entity_key;
+}
+
+// Main execution
+async function main() {
+  const args = process.argv.slice(2);
+  const command = args[0];
+
+  if (command === 'read' && args[1]) {
+    // Read mode: retrieve entity by key
+    const entityKey = args[1];
+    const result = await readFromArkiv(entityKey);
+    console.log(`\n📄 Decoded Payload:`);
+    console.log(result.decodedData);
+  } else if (command === 'custom' && args[1]) {
+    // Custom mode: save provided JSON string
+    const data = JSON.parse(args[1]);
+    await saveCustomData(data, "Custom data");
+  } else {
+    // Default mode: save latest response
+    await saveLatestResponse();
+  }
+}
+
+// Run the script
+main().catch(error => {
+  console.error("\n❌ Error:", error);
+  process.exit(1);
+});

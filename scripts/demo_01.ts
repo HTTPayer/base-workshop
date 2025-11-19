@@ -4,7 +4,9 @@ Simple client script to call a x402 endpoint (Gloria AI)
 
 import { wrapFetchWithPayment, decodeXPaymentResponse, createSigner } from "x402-fetch";
 import dotenv from "dotenv";
+import kleur from "kleur";
 import { saveResponse, saveResponseBody } from "./utils/save_resp.js";
+import { logStep, logInfo, logPayment, logResponseBody, logSuccess, logError, logApiUrl } from "./utils/format_output.js";
 
 dotenv.config();
 
@@ -14,7 +16,13 @@ async function testClient() {
   if (!PRIVATE_KEY.startsWith("0x")) {
     PRIVATE_KEY = `0x${PRIVATE_KEY}`;
   }
-  console.log("[client] PRIVATE_KEY detected:", PRIVATE_KEY ? true : false);
+
+  console.log();
+  console.log(kleur.bold().cyan("Demo 01: Gloria AI - Basic x402 Payment"));
+  console.log(kleur.bold().white("GET request with automated USDC payment on Base"));
+  console.log();
+
+  logInfo("Private key detected", PRIVATE_KEY ? "✓" : "✗");
 
   // Create a signer using x402's createSigner helper
   const signer = await createSigner("base", PRIVATE_KEY as `0x${string}`);
@@ -22,18 +30,19 @@ async function testClient() {
   // Extract the account address for logging
   // Signer can be either a SignerWallet (with .account.address) or LocalAccount (with .address directly)
   const accountAddress = "account" in signer ? signer.account?.address : signer.address;
-  console.log("[client] Using account address:", accountAddress || "N/A");
-  console.log("[client] Using chain: Base");
+  logInfo("Account address", accountAddress || "N/A");
+  logInfo("Chain", "Base");
 
   // Wrap the fetch function with payment handling
   const fetchWithPay = wrapFetchWithPayment(fetch, signer);
 
   const TARGET_API = "https://api.itsgloria.ai/news?feed_categories=ai,crypto";
-  console.log("[client] Calling:", `${TARGET_API}`);
+  console.log();
+  logApiUrl(TARGET_API);
 
   try {
     // Step 1: First call without payment to get HTTPayer payment instructions
-    console.log("\n[client] Step 1: Calling relay without payment to get instructions...");
+    logStep(1, "Initial request to check payment requirement");
     const firstResponse = await fetch(TARGET_API, {
       method: "GET",
       headers: {
@@ -41,14 +50,16 @@ async function testClient() {
         },
     });
 
-    console.log("[client] First response status:", firstResponse.status);
+    logInfo("Response status", firstResponse.status);
 
     if (firstResponse.status === 402) {
       const paymentInstructions = await firstResponse.json();
-      console.log("[client] Payment required. Instructions:", JSON.stringify(paymentInstructions, null, 2));
+      console.log();
+      console.log(kleur.yellow("⚠ Payment required"));
+      console.log(kleur.dim("Payment instructions received"));
 
       // Step 2: Make payment with x402-fetch
-      console.log("\n[client] Step 2: Making payment and retrying...");
+      logStep(2, "Making payment with x402-fetch");
       const paidResponse = await fetchWithPay(TARGET_API, {
         method: "GET",
         headers: {
@@ -56,41 +67,44 @@ async function testClient() {
         },
       });
 
-      console.log("[client] Paid response status:", paidResponse.status);
+      logInfo("Response status", paidResponse.status);
 
       // Check for payment response header
       const paymentResponseHeader = paidResponse.headers.get("x-payment-response");
       let paymentResponse;
       if (paymentResponseHeader) {
         paymentResponse = decodeXPaymentResponse(paymentResponseHeader);
-        console.log("[client] Payment executed:", JSON.stringify(paymentResponse, null, 2));
+        logPayment(paymentResponse);
       }
 
       // Save the full response with metadata
-      await saveResponse(paidResponse, "gloria-ai", paymentResponse, {
+      const savedFile = await saveResponse(paidResponse, "gloria-ai", paymentResponse, {
         prefix: "demo01"
       });
+
+      logSuccess("Response saved successfully");
 
       // Get response body for display
       const contentType = paidResponse.headers.get("content-type");
       if (contentType?.includes("application/json")) {
         const body = await paidResponse.json();
-        console.log("[client] Response body:", JSON.stringify(body, null, 2));
+        logResponseBody(body, "API Response", savedFile);
       } else {
         const text = await paidResponse.text();
-        console.log("[client] Response body:", text);
+        logResponseBody(text, "API Response", savedFile);
       }
     } else if (firstResponse.status === 200) {
       // Target API doesn't require payment
       const body = await firstResponse.text();
-      console.log("[client] Success (no payment required):", body);
+      logSuccess("Success (no payment required)");
+      logResponseBody(body, "API Response");
     } else {
       // Error
       const error = await firstResponse.text();
-      console.error("[client] Error:", firstResponse.status, error);
+      logError(`Error: ${firstResponse.status} ${firstResponse.statusText}`, error);
     }
   } catch (error) {
-    console.error("[client] Request failed:", error);
+    logError("Request failed", error);
   }
 }
 

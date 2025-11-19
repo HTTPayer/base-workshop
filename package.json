@@ -13,9 +13,8 @@
     "demo:05": "tsx scripts/demo_05.ts",
     "demo:06": "tsx scripts/demo_06.ts",
     "demo:07": "tsx scripts/demo_07.ts",
-    "demo:08": "tsx scripts/demo_08.ts",
     "generate:evm:accounts": "tsx scripts/generate-evm-accounts.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run demo:01 && npm run demo:02 && npm run demo:03 && npm run demo:04 && npm run demo:05 && npm run demo:06 && npm run demo:07"
   },
   "repository": {
     "type": "git",
@@ -34,6 +33,9 @@
   "homepage": "https://github.com/HTTPayer/base-workshop#readme",
   "dependencies": {
     "dotenv": "^17.2.3",
+    "form-data": "^4.0.5",
+    "kleur": "^4.1.5",
+    "node-fetch": "^3.3.2",
     "viem": "^2.39.2",
     "x402-fetch": "^0.7.0"
   },

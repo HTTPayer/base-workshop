@@ -88,7 +88,7 @@ npm --version
 
    ```env
    PRIVATE_KEY=your_private_key_here
-   LLM_SERVER=http://localhost:3000
+   LLM_SERVER=https://api.httpayer.com/llm
    SPURO_API_URL=https://qu01n0u34hdsh6ajci1ie9trq8.ingress.akash-palmito.org
    SERVER_API_KEY=your_server_api_key
    ```
@@ -148,19 +148,93 @@ npm run demo:01
 4. Decodes payment info from `X-Payment` header
 5. Saves response and payment metadata
 
-### Demo 02: (Description pending)
+### Demo 02: HTTPayer Relay - Same-Chain with Privacy
 
 ```bash
 npm run demo:02
 ```
 
-### Demo 03: (Description pending)
+**What does it do?**
+
+- Demonstrates **HTTPayer Relay** for privacy-preserving payments
+- Makes a POST request to Heurist AI Search through the relay
+- Pays on Base while accessing Heurist API (also on Base)
+- Shows how relay hides your wallet address from the target API
+
+**Key features:**
+
+- **Privacy-preserving**: Target API doesn't see your wallet address
+- **HTTPayer Relay**: Intermediary handles payment forwarding
+- **AI-powered search**: Searches for "latest advancements in AI-powered search engines"
+- **Two-step flow**: First call gets payment instructions (402), second call pays and retrieves data
+
+**Relay payload:**
+
+```typescript
+{
+  api_url: "https://mesh.heurist.xyz/x402/agents/ExaSearchDigestAgent/exa_web_search",
+  method: "POST",
+  network: "base",
+  data: {
+    search_term: "latest advancements in AI-powered search engines",
+    limit: 5,
+    time_filter: "past_week",
+    include_domains: ["https://hackernoon.com"]
+  }
+}
+```
+
+**Flow:**
+
+1. Call relay without payment → Receive 402 Payment Required
+2. Extract payment instructions from response
+3. Make payment with `wrapFetchWithPayment`
+4. Receive search results from Heurist AI
+
+### Demo 03: HTTPayer Relay - Cross-Chain (Base → Solana)
 
 ```bash
 npm run demo:03
 ```
 
-### Demo 04: POST Request with x402
+**What does it do?**
+
+- Demonstrates **cross-chain** capabilities of HTTPayer Relay
+- Pays with USDC on **Base** blockchain
+- Accesses **Jupiter API** on **Solana** (DEX aggregator)
+- Gets a quote for swapping 0.02 SOL → USDC
+
+**Key features:**
+
+- **Cross-chain payment**: Pay on one chain, access API on another
+- **Jupiter integration**: Solana's premier DEX aggregator
+- **Real DeFi use case**: Get swap quotes without having Solana wallet funded
+- **Network abstraction**: Client only needs Base USDC
+
+**Relay payload:**
+
+```typescript
+{
+  api_url: "https://jupiter.api.corbits.dev/ultra/v1/order",
+  method: "GET",
+  network: "base", // Pay on Base
+  params: {
+    inputMint: "So11111111111111111111111111111111111111112", // SOL
+    outputMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC
+    amount: "20000000", // 0.02 SOL
+    taker: "corzHctjX9Wtcrkfxz3Se8zdXqJYCaamWcQA7vwKF7Q"
+  }
+}
+```
+
+**Why this matters:**
+
+- **No Solana wallet needed**: Access Solana APIs without SOL for gas
+- **Unified payment method**: Use USDC on Base for all API calls
+- **Cross-chain composability**: Build apps that span multiple blockchains
+- **Cost efficiency**: No need to bridge assets or maintain balances on multiple chains
+
+### Demo 04: Nansen Smart Money Netflow API - Cross-Chain (Base → Solana)
 
 ```bash
 npm run demo:04
@@ -168,11 +242,47 @@ npm run demo:04
 
 **What does it do?**
 
-- Demonstrates a POST request with x402 payments
-- Similar to demo_01 but with POST method
-- Saves response using `save_resp` utility
+- Fetches **Smart Money Netflow** data from Nansen Analytics
+- Tracks token flows from institutional investors ("Fund", "Smart Trader")
+- Analyzes both **Ethereum** and **Solana** chains simultaneously
+- Uses HTTPayer Relay for cross-chain payment
 
-### Demo 05: Smart Money Intelligence Generation
+**Key features:**
+
+- **Premium data access**: Nansen API typically requires expensive subscription
+- **Multi-chain analysis**: Get data for Ethereum and Solana in one call
+- **Smart money tracking**: See which tokens funds and smart traders are accumulating/selling
+- **Pay-per-use**: Only pay for the data you actually request
+
+**API request:**
+
+```typescript
+{
+  api_url: "https://nansen.api.corbits.dev/api/v1/smart-money/netflow",
+  method: "POST",
+  network: "base",
+  data: {
+    chains: ["ethereum", "solana"],
+    filters: {
+      include_smart_money_labels: ["Fund", "Smart Trader"],
+      exclude_smart_money_labels: ["30D Smart Trader"],
+      include_native_tokens: false,
+      include_stablecoins: false
+    },
+    pagination: { page: 1, per_page: 10 }
+  }
+}
+```
+
+**Response data:**
+
+- Token symbols and contract addresses
+- Net flow (USD) over 7d, 30d periods
+- Smart money wallet counts
+- Token sectors and categories
+- Chain-specific data
+
+### Demo 05: E2B Code Execution API
 
 ```bash
 npm run demo:05
@@ -180,31 +290,43 @@ npm run demo:05
 
 **What does it do?**
 
-- Generates "Smart Money Intelligence" analysis
-- Combines data from multiple sources (Nansen, Heurist, etc.)
-- Uses LLM to create analytical summary
-- Saves structured data to `./website/data.json`
+- Demonstrates **remote code execution** using E2B (Execute to Build) API
+- Executes Python code snippets in a secure sandboxed environment
+- Automatically saves execution results with payment metadata
 
-**Output structure:**
+**Key features:**
 
-```json
+- **Secure execution**: Run untrusted code in isolated sandbox
+- **Python support**: Execute Python snippets and get results
+- **Pay-per-execution**: Only pay when you run code
+
+**API request:**
+
+```typescript
 {
-  "summary": "LLM-generated summary...",
-  "generated_at": "2024-01-15T10:30:00Z",
-  "metadata": {
-    "data_sources": ["nansen", "heurist"],
-    "analysis_date": "2024-01-15"
-  },
-  "nansen": {
-    /* Nansen data */
-  },
-  "heurist": {
-    /* Heurist data */
+  api_url: "https://echo.router.merit.systems/resource/e2b/execute",
+  method: "POST",
+  network: "base",
+  data: {
+    snippet: 'print("Hello World!")'
   }
 }
 ```
 
-### Demo 06: Multi-API with HTTPayer Relay (Cross-Chain)
+**Use cases:**
+
+- Testing code snippets without local setup
+- Running compute jobs on-demand
+- Executing data processing scripts
+- Building serverless Python functions
+
+**Response includes:**
+
+- Execution result/output
+- Any errors or exceptions
+- Execution metadata
+
+### Demo 06: Multi-API Orchestration with LLM & Translation
 
 ```bash
 npm run demo:06
@@ -212,40 +334,45 @@ npm run demo:06
 
 **What does it do?**
 
-- Demonstrates **HTTPayer Relay** for cross-chain payments
-- Makes multiple API calls with different methods, payloads, and networks
-- Orchestrates a complete analysis flow:
-  1. Fetches Smart Money data from Nansen (Solana endpoint)
-  2. Searches related news with Heurist AI (Base endpoint)
-  3. Generates summary with LLM
-  4. Translates summary to Spanish
-- Saves combined data to `./website/data.json`
+- Orchestrates **4 API calls** in sequence to generate Smart Money Intelligence
+- Demonstrates advanced HTTPayer Relay capabilities
+- Complete analysis pipeline:
+  1. **Nansen Smart Money API**: Fetches token netflow data (Ethereum & Solana)
+  2. **Heurist AI Search**: Finds related crypto news articles
+  3. **LLM Chat API**: Generates comprehensive analysis
+  4. **LLM Translate API**: Translates analysis to Spanish
+- Saves results as markdown files and JSON data
 
 **Key features:**
 
-- **HTTPayer Relay**: Pay on Base while accessing APIs on other networks
-- **Multi-chain**: Nansen analyzes Ethereum and Solana simultaneously
-- **Smart data flow**: Extracts tokens from Nansen and uses them for Heurist search
-- **Auto-translation**: Converts analysis to Spanish
+- **Multi-API workflow**: Chains multiple paid APIs together
+- **Smart data flow**: Extracts tokens from Nansen, feeds to Heurist search query
+- **AI-powered analysis**: LLM synthesizes data into actionable insights
+- **Auto-translation**: Spanish version generated automatically
+- **Multiple output formats**:
+  - `./output/demo06_original_*.md` - English markdown
+  - `./output/demo06_translated_*.md` - Spanish markdown
+  - `./website/data.json` - Full structured data
 
-**Relay payload:**
+**Complete flow:**
 
-```typescript
-{
-  api_url: "https://target-api.com/endpoint",
-  method: "POST",
-  network: "base", // Network you want to pay on
-  data: { /* your payload */ }
-}
+```
+1. Nansen API → Smart money flows for ETH/SOL tokens
+2. Extract token symbols → Build Heurist search query
+3. Heurist Search → Related crypto news articles
+4. LLM Chat → Analyze trends and generate summary
+5. LLM Translate → Spanish version
+6. Save → Markdown files + JSON data
 ```
 
 **APIs used:**
 
-- Nansen API (Smart Money Netflow)
-- Heurist AI Search (crypto news)
-- LLM Server (/chat and /translate)
+- Nansen API (Smart Money Netflow) - Multi-chain analytics
+- Heurist AI Search (ExaSearch) - Crypto news aggregation
+- LLM Server (/chat) - GPT-4 analysis
+- LLM Server (/translate) - Spanish translation
 
-### Demo 07: Deploy to webdb.site with Timeout Handling
+### Demo 07: Save to Arkiv Blockchain via Spuro SDK
 
 ```bash
 npm run demo:07
@@ -253,44 +380,23 @@ npm run demo:07
 
 **What does it do?**
 
-- Deploys static content to webdb.site (decentralized storage)
-- Handles long uploads with 120-second timeout
-- Implements retry logic (3 max attempts) with progressive backoff
-- Displays file sizes during upload
-- Saves deployment response with website URL
-
-**Special features:**
-
-- `AbortController` for timeouts
-- Automatic retries on failure
-- Upload progress visualization
-- Human-readable file size formatting (KB/MB)
-
-### Demo 08: Save to Arkiv Blockchain via Spuro SDK
-
-```bash
-npm run demo:08
-```
-
-**What does it do?**
-
-- Reads Smart Money Intelligence summary from `./website/data.json` (generated by demo_05)
+- Reads Smart Money Intelligence summary from `./website/data.json` (generated by demo_06)
 - Encodes summary as hexadecimal payload
-- Saves to Arkiv blockchain using Spuro SDK
+- Saves to **Arkiv blockchain** using Spuro SDK
 - Uses `fetchWithPay` for x402 payments to Spuro
 - Verifies storage by reading data back
 - Saves entity record to `./arkiv/` for future reference
 
 **Detailed flow:**
 
-1. Checks that `./website/data.json` exists (run demo_05 first if not)
+1. Checks that `./website/data.json` exists (run demo_06 first if not)
 2. Extracts `websiteData.summary` from data
 3. Encodes to hexadecimal with `encodePayload()`
 4. Calls `createEntity()` with:
    - `fetchWithPay` - x402 enabled
    - Hexadecimal payload
    - String attributes (required by Arkiv)
-   - TTL: 1 year (86400 \* 365 seconds)
+   - TTL: 1 year (86400 × 365 seconds)
 5. Receives `entity_key` and `tx_hash`
 6. Verifies with `readEntity()`
 7. Saves local record with all metadata
@@ -305,14 +411,14 @@ npm run demo:08
 **Usage modes:**
 
 ```bash
-# Default mode: save latest demo_05 summary
-npm run demo:08
+# Default mode: save latest demo_06 summary
+npm run demo:07
 
 # Read entity by key
-npm run demo:08 read <entity_key>
+npm run demo:07 read <entity_key>
 
 # Save custom data
-npm run demo:08 custom '{"my": "data"}'
+npm run demo:07 custom '{"my": "data"}'
 ```
 
 **Output:**
@@ -338,22 +444,33 @@ The project creates and uses several directories for saving data:
   - Payment metadata (amount, beneficiary, tx_hash)
   - HTTP headers
   - Timing information
-- **Generated by**: demo_01, demo_04, demo_07, etc.
+- **Generated by**: demo_01, demo_02, demo_03, demo_04, demo_05, demo_06
 - **Example**: `demo01_gloria-ai_2024-01-15T10-30-45-123Z.json`
+
+### `./output/`
+
+- **Purpose**: Stores formatted output files (markdown, reports)
+- **Format**: Markdown (.md) with timestamp
+- **Generated by**: demo_06
+- **Contains**:
+  - `demo06_original_*.md` - English Smart Money Intelligence analysis
+  - `demo06_translated_*.md` - Spanish translation
+- **Features**: Clean markdown formatting for easy reading and sharing
+- **Example**: `demo06_original_2024-01-15T10-30-45.md`
 
 ### `./website/`
 
 - **Purpose**: Stores structured data for website generation
 - **Main file**: `data.json`
-- **Generated by**: demo_05
+- **Generated by**: demo_06
 - **Contains**: Smart Money Intelligence analysis with LLM summary
-- **Used by**: demo_08 (to save to Arkiv)
+- **Used by**: demo_07 (to save to Arkiv)
 
 ### `./arkiv/`
 
 - **Purpose**: Local records of entities saved to Arkiv blockchain
 - **Format**: JSON with entity_key as filename
-- **Generated by**: demo_08
+- **Generated by**: demo_07
 - **Contains**:
   - `entity_key`: Unique identifier on Arkiv
   - `tx_hash`: Blockchain transaction hash
@@ -423,30 +540,7 @@ npm install
 
 Make sure `tsconfig.json` has `"moduleResolution": "bundler"`.
 
-### Error: "Signer type incompatible"
-
-**Cause**: Using `createWalletClient` from viem instead of `createSigner` from x402-fetch.
-
-**Solution**: Always use:
-
-```typescript
-import { createSigner } from "x402-fetch";
-const signer = await createSigner("base", PRIVATE_KEY as `0x${string}`);
-```
-
-### Error: "524 Timeout" in demo_07
-
-**Cause**: Very large upload or slow connection.
-
-**Solution**: The script already includes:
-
-- 120-second timeout
-- 3 automatic retries
-- Progressive backoff
-
-If it persists, check your internet connection or the size of files being uploaded.
-
-### Error: "rlp: expected input string" in demo_08
+### Error: "rlp: expected input string" in demo_07
 
 **Cause**: Attributes in Spuro must be strings.
 
@@ -458,17 +552,6 @@ attributes: {
   has_data: String(boolean),             // Booleans → string
   timestamp: dateString || ""            // Strings with fallback
 }
-```
-
-### Error: "No website data found" in demo_08
-
-**Cause**: Missing `./website/data.json` file.
-
-**Solution**: Run demo_05 first:
-
-```bash
-npm run demo:05
-npm run demo:08
 ```
 
 ### Error: "Insufficient funds"

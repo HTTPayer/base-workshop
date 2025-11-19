@@ -4,6 +4,9 @@ Simple client script to call x402 endpoint through HTTPayer relay (same-chain, p
 
 import { wrapFetchWithPayment, decodeXPaymentResponse, createSigner } from "x402-fetch";
 import dotenv from "dotenv";
+import kleur from "kleur";
+import { saveResponse } from "./utils/save_resp.js";
+import { logStep, logInfo, logPayment, logResponseBody, logSuccess, logError, logApiUrl } from "./utils/format_output.js";
 
 dotenv.config();
 
@@ -12,7 +15,13 @@ async function testRelay() {
   if (!PRIVATE_KEY.startsWith("0x")) {
     PRIVATE_KEY = `0x${PRIVATE_KEY}`;
   }
-  console.log("[client] PRIVATE_KEY detected:", PRIVATE_KEY ? true : false);
+
+  console.log();
+  console.log(kleur.bold().cyan("Demo 02: HTTPayer Relay - Same-Chain Privacy"));
+  console.log(kleur.bold().white("Pay on Base → Access Heurist AI (also on Base)"));
+  console.log();
+
+  logInfo("Private key detected", PRIVATE_KEY ? "✓" : "✗");
 
   // Create a signer using x402's createSigner helper
   const signer = await createSigner("base", PRIVATE_KEY as `0x${string}`);
@@ -20,10 +29,10 @@ async function testRelay() {
   // Extract the account address for logging
   // Signer can be either a SignerWallet (with .account.address) or LocalAccount (with .address directly)
   const accountAddress = "account" in signer ? signer.account?.address : signer.address;
-  console.log("[client] Using account address:", accountAddress || "N/A");
-  console.log("[client] Using chain: Base");
+  logInfo("Account address", accountAddress || "N/A");
+  logInfo("Chain", "Base");
 
-  const RELAY_URL = "https://relay.httpayer.com";
+  const RELAY_URL = "https://api.httpayer.com/relay";
   const TARGET_API = "https://mesh.heurist.xyz/x402/agents/ExaSearchDigestAgent/exa_web_search";
   const payload = {
     api_url: TARGET_API,
@@ -39,13 +48,15 @@ async function testRelay() {
 
   // Wrap the fetch function with payment handling
   const fetchWithPay = wrapFetchWithPayment(fetch, signer);
-  console.log("[client] Testing relay endpoint...");
-  console.log("[client] Target API:", TARGET_API);
-  console.log("[client] Payload:", payload);
+
+  console.log();
+  logApiUrl(RELAY_URL, "Relay URL");
+  logApiUrl(TARGET_API, "Target API");
+  logInfo("Search term", payload.data.search_term);
 
   try {
     // Step 1: First call without payment to get HTTPayer payment instructions
-    console.log("\n[client] Step 1: Calling relay without payment to get instructions...");
+    logStep(1, "Calling relay to get payment instructions");
     const firstResponse = await fetch(RELAY_URL, {
       method: "POST",
       headers: {
@@ -54,14 +65,16 @@ async function testRelay() {
       body: JSON.stringify(payload),
     });
 
-    console.log("[client] First response status:", firstResponse.status);
+    logInfo("Response status", firstResponse.status);
 
     if (firstResponse.status === 402) {
       const paymentInstructions = await firstResponse.json();
-      console.log("[client] Payment required. Instructions:", JSON.stringify(paymentInstructions, null, 2));
+      console.log();
+      console.log(kleur.yellow("⚠ Payment required"));
+      console.log(kleur.dim("Payment instructions received"));
 
       // Step 2: Make payment with x402-fetch
-      console.log("\n[client] Step 2: Making payment and retrying...");
+      logStep(2, "Making payment and retrying through relay");
       const paidResponse = await fetchWithPay(RELAY_URL, {
         method: "POST",
         headers: {
@@ -70,35 +83,44 @@ async function testRelay() {
         body: JSON.stringify(payload),
       });
 
-      console.log("[client] Paid response status:", paidResponse.status);
+      logInfo("Response status", paidResponse.status);
 
       // Check for payment response header
       const paymentResponseHeader = paidResponse.headers.get("x-payment-response");
+      let paymentResponse;
       if (paymentResponseHeader) {
-        const paymentResponse = decodeXPaymentResponse(paymentResponseHeader);
-        console.log("[client] Payment executed:", JSON.stringify(paymentResponse, null, 2));
+        paymentResponse = decodeXPaymentResponse(paymentResponseHeader);
+        logPayment(paymentResponse);
       }
+
+      // Save the full response with metadata
+      const savedFile = await saveResponse(paidResponse, "heurist-search", paymentResponse, {
+        prefix: "demo02"
+      });
+
+      logSuccess("Response saved successfully");
 
       // Get response body
       const contentType = paidResponse.headers.get("content-type");
       if (contentType?.includes("application/json")) {
         const body = await paidResponse.json();
-        console.log("[client] Response body:", JSON.stringify(body, null, 2));
+        logResponseBody(body, "Heurist AI Search Results", savedFile);
       } else {
         const text = await paidResponse.text();
-        console.log("[client] Response body:", text);
+        logResponseBody(text, "Heurist AI Search Results", savedFile);
       }
     } else if (firstResponse.status === 200) {
       // Target API doesn't require payment
       const body = await firstResponse.text();
-      console.log("[client] Success (no payment required):", body);
+      logSuccess("Success (no payment required)");
+      logResponseBody(body, "API Response");
     } else {
       // Error
       const error = await firstResponse.text();
-      console.error("[client] Error:", firstResponse.status, error);
+      logError(`Error: ${firstResponse.status} ${firstResponse.statusText}`, error);
     }
   } catch (error) {
-    console.error("[client] Request failed:", error);
+    logError("Request failed", error);
   }
 }
 
