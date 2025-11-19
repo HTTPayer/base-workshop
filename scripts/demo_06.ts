@@ -13,8 +13,8 @@ import { join } from "path";
 dotenv.config();
 
 console.log();
-console.log(kleur.bold().cyan("Demo 06: Multi-API Orchestration"));
-console.log(kleur.bold().white("Nansen + Heurist + LLM Chat + Translation"));
+console.log(kleur.bold().cyan("Demo 06: Orquestación Multi-API"));
+console.log(kleur.bold().white("Nansen + Heurist + LLM Chat + Traducción"));
 console.log();
 
 let PRIVATE_KEY = process.env.PRIVATE_KEY || "";
@@ -295,13 +295,13 @@ async function translateText(fetchWithPay: typeof fetch, text: any) {
 // Main execution function
 async function runDemo() {
   try {
-    logStep(1, "Fetching Nansen Smart Money Data");
+    logStep(1, "Obteniendo datos de Nansen Smart Money");
     const nansenData = await getNansenData(fetchWithPay);
 
-    logStep(2, "Searching crypto news with Heurist AI");
+    logStep(2, "Buscando noticias cripto con Heurist AI");
     const heuristData = await getHeuristSearch(fetchWithPay, nansenData);
 
-    logStep(3, "Generating analysis with LLM + Translation");
+    logStep(3, "Generando análisis con LLM + Traducción");
     const summary = await summarizeWithLLM(fetchWithPay, nansenData, heuristData, true); // translate = true by default
 
     console.log();
@@ -380,7 +380,7 @@ async function runDemo() {
     }
 
     // Save combined data for website
-    logStep(4, "Saving combined data for website");
+    logStep(4, "Guardando datos combinados para el sitio web");
     const websiteDir = "./website";
     if (!existsSync(websiteDir)) {
       mkdirSync(websiteDir, { recursive: true });

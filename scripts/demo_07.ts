@@ -21,8 +21,8 @@ import {
 dotenv.config();
 
 console.log();
-console.log(kleur.bold().cyan("Demo 07: Save to Arkiv Blockchain"));
-console.log(kleur.bold().white("Permanent storage via Spuro SDK"));
+console.log(kleur.bold().cyan("Demo 07: Guardar en Blockchain Arkiv"));
+console.log(kleur.bold().white("Almacenamiento permanente vía Spuro SDK"));
 console.log();
 
 const SPURO_API_URL = process.env.SPURO_API_URL || "https://qu01n0u34hdsh6ajci1ie9trq8.ingress.akash-palmito.org";
@@ -132,7 +132,7 @@ async function readFromArkiv(entityKey: string) {
 
 async function saveLatestResponse() {
   console.log();
-  logStep(1, "Loading Smart Money data from demo_06");
+  logStep(1, "Cargando datos de Smart Money desde demo_06");
 
   // Check if website data.json exists
   const dataPath = "./website/data.json";
@@ -151,7 +151,7 @@ async function saveLatestResponse() {
   const summary = websiteData.summary;
 
   // Save to Arkiv
-  logStep(2, "Saving to Arkiv blockchain via Spuro");
+  logStep(2, "Guardando en blockchain Arkiv vía Spuro");
   // Note: All attribute values must be strings for Arkiv
   const arkivResult = await saveToArkiv(summary, {
     description: "Smart Money Intelligence Summary",
@@ -166,7 +166,7 @@ async function saveLatestResponse() {
   });
 
   // Verify by reading it back
-  logStep(3, "Verifying storage on blockchain");
+  logStep(3, "Verificando almacenamiento en blockchain");
   const verifyResult = await readFromArkiv(arkivResult.entity_key);
 
   // Parse the decoded payload to show it (truncated)

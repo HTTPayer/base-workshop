@@ -57,7 +57,7 @@ export function logSection(title: string) {
  */
 export function logStep(stepNumber: number, description: string) {
   console.log();
-  console.log(kleur.bold().cyan(`[Step ${stepNumber}]`) + " " + kleur.white(description));
+  console.log(kleur.bold().cyan(`[Paso ${stepNumber}]`) + " " + kleur.white(description));
 }
 
 /**

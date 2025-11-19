@@ -17,8 +17,8 @@ async function testRelay() {
   }
 
   console.log();
-  console.log(kleur.bold().cyan("Demo 02: HTTPayer Relay - Same-Chain Privacy"));
-  console.log(kleur.bold().white("Pay on Base → Access Heurist AI (also on Base)"));
+  console.log(kleur.bold().cyan("Demo 02: HTTPayer Relay - Privacidad en la Misma Cadena"));
+  console.log(kleur.bold().white("Paga en Base → Accede a Heurist AI (también en Base)"));
   console.log();
 
   logInfo("Private key detected", PRIVATE_KEY ? "✓" : "✗");
@@ -56,7 +56,7 @@ async function testRelay() {
 
   try {
     // Step 1: First call without payment to get HTTPayer payment instructions
-    logStep(1, "Calling relay to get payment instructions");
+    logStep(1, "Llamando al relay para obtener instrucciones de pago");
     const firstResponse = await fetch(RELAY_URL, {
       method: "POST",
       headers: {
@@ -74,7 +74,7 @@ async function testRelay() {
       console.log(kleur.dim("Payment instructions received"));
 
       // Step 2: Make payment with x402-fetch
-      logStep(2, "Making payment and retrying through relay");
+      logStep(2, "Realizando pago y reintentando a través del relay");
       const paidResponse = await fetchWithPay(RELAY_URL, {
         method: "POST",
         headers: {

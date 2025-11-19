@@ -18,8 +18,8 @@ async function testClient() {
   }
 
   console.log();
-  console.log(kleur.bold().cyan("Demo 01: Gloria AI - Basic x402 Payment"));
-  console.log(kleur.bold().white("GET request with automated USDC payment on Base"));
+  console.log(kleur.bold().cyan("Demo 01: Gloria AI - Pago x402 Básico"));
+  console.log(kleur.bold().white("Solicitud GET con pago automático de USDC en Base"));
   console.log();
 
   logInfo("Private key detected", PRIVATE_KEY ? "✓" : "✗");
@@ -35,19 +35,23 @@ async function testClient() {
 
   // Wrap the fetch function with payment handling
   const fetchWithPay = wrapFetchWithPayment(fetch, signer);
+  const requestData = {
+    prompt: "The x402 protocol is growing fast, and it enables developers to monetize applications with ease.",
+  }
 
-  const TARGET_API = "https://api.itsgloria.ai/news?feed_categories=ai,crypto";
+  const TARGET_API = "https://true-cast-agent.vercel.app/api/trueCast";
   console.log();
   logApiUrl(TARGET_API);
 
   try {
     // Step 1: First call without payment to get HTTPayer payment instructions
-    logStep(1, "Initial request to check payment requirement");
+    logStep(1, "Solicitud inicial para verificar requisito de pago");
     const firstResponse = await fetch(TARGET_API, {
-      method: "GET",
+      method: "POST",
       headers: {
         "Content-Type": "application/json"
         },
+      body: JSON.stringify(requestData)
     });
 
     logInfo("Response status", firstResponse.status);
@@ -59,12 +63,13 @@ async function testClient() {
       console.log(kleur.dim("Payment instructions received"));
 
       // Step 2: Make payment with x402-fetch
-      logStep(2, "Making payment with x402-fetch");
+      logStep(2, "Realizando pago con x402-fetch");
       const paidResponse = await fetchWithPay(TARGET_API, {
-        method: "GET",
+        method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
+        body: JSON.stringify(requestData)
       });
 
       logInfo("Response status", paidResponse.status);
@@ -78,7 +83,7 @@ async function testClient() {
       }
 
       // Save the full response with metadata
-      const savedFile = await saveResponse(paidResponse, "gloria-ai", paymentResponse, {
+      const savedFile = await saveResponse(paidResponse, "trueCast", paymentResponse, {
         prefix: "demo01"
       });
 

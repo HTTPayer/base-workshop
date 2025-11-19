@@ -121,7 +121,7 @@ Una vez ejecutado, copia la clave privada y pégala en .env como valor para "PRI
 
 ## Scripts de Demostración
 
-### Demo 01: Gloria AI - Solicitud GET Básica con x402
+### Demo 01: Truecast - Solicitud POST Básica con x402
 
 ```bash
 npm run demo:01
@@ -129,7 +129,7 @@ npm run demo:01
 
 **¿Qué hace?**
 
-- Realiza una solicitud GET simple a la API de Gloria AI
+- Realiza una solicitud POST simple a la API de Truecast para verificar la declaración: "El protocolo x402 está creciendo rápidamente y permite a los desarrolladores monetizar aplicaciones con facilidad."
 - Implementa pagos x402 usando `wrapFetchWithPayment`
 - Decodifica y muestra los detalles de pago (monto, beneficiario, hash de transacción)
 - Guarda la respuesta automáticamente en `./responses/` con timestamp

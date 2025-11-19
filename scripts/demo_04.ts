@@ -17,8 +17,8 @@ async function testRelay() {
   }
 
   console.log();
-  console.log(kleur.bold().cyan("Demo 04: Nansen Smart Money Netflow API"));
-  console.log(kleur.bold().white("Track institutional token flows on Ethereum & Solana"));
+  console.log(kleur.bold().cyan("Demo 04: API de Nansen Smart Money Netflow"));
+  console.log(kleur.bold().white("Rastrea flujos de tokens institucionales en Ethereum y Solana"));
   console.log();
 
   logInfo("Private key detected", PRIVATE_KEY ? "✓" : "✗");
@@ -81,7 +81,7 @@ async function testRelay() {
 
   try {
     // Step 1: First call without payment to get HTTPayer payment instructions
-    logStep(1, "Calling relay to get payment instructions");
+    logStep(1, "Llamando al relay para obtener instrucciones de pago");
     const firstResponse = await fetch(RELAY_URL, {
       method: "POST",
       headers: {
@@ -99,7 +99,7 @@ async function testRelay() {
       console.log(kleur.dim("Payment instructions received"));
 
       // Step 2: Make payment with x402-fetch
-      logStep(2, "Making payment and retrying");
+      logStep(2, "Realizando pago y reintentando");
       const paidResponse = await fetchWithPay(RELAY_URL, {
         method: "POST",
         headers: {

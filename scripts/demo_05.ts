@@ -30,8 +30,8 @@ async function testClient() {
   }
 
   console.log();
-  console.log(kleur.bold().cyan("Demo 05: E2B Code Execution API"));
-  console.log(kleur.bold().white("Execute Python code in secure sandbox"));
+  console.log(kleur.bold().cyan("Demo 05: API de Ejecución de Código E2B"));
+  console.log(kleur.bold().white("Ejecuta código Python en un sandbox seguro"));
   console.log();
 
   logInfo("Private key detected", PRIVATE_KEY ? "✓" : "✗");
@@ -59,7 +59,7 @@ async function testClient() {
 
   try {
     // Step 1: First call without payment to get HTTPayer payment instructions
-    logStep(1, "Initial request to check payment requirement");
+    logStep(1, "Solicitud inicial para verificar requisito de pago");
     const firstResponse = await fetch(TARGET_API, {
       method: "POST",
       headers: {
@@ -77,7 +77,7 @@ async function testClient() {
       console.log(kleur.dim("Payment instructions received"));
 
       // Step 2: Make payment with x402-fetch
-      logStep(2, "Executing code with payment");
+      logStep(2, "Ejecutando código con pago");
       const paidResponse = await fetchWithPay(TARGET_API, {
         method: "POST",
         headers: {

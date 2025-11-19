@@ -18,7 +18,7 @@ async function testRelay() {
 
   console.log();
   console.log(kleur.bold().cyan("Demo 03: HTTPayer Relay - Cross-Chain"));
-  console.log(kleur.bold().white("Pay on Base → Access Jupiter API on Solana"));
+  console.log(kleur.bold().white("Paga en Base → Accede a la API de Jupiter en Solana"));
   console.log();
 
   logInfo("Private key detected", PRIVATE_KEY ? "✓" : "✗");
@@ -59,7 +59,7 @@ async function testRelay() {
 
   try {
     // Step 1: First call without payment to get HTTPayer payment instructions
-    logStep(1, "Calling relay to get payment instructions");
+    logStep(1, "Llamando al relay para obtener instrucciones de pago");
     const firstResponse = await fetch(RELAY_URL, {
       method: "POST",
       headers: {
@@ -77,7 +77,7 @@ async function testRelay() {
       console.log(kleur.dim("Cross-chain payment: Base → Solana API"));
 
       // Step 2: Make payment with x402-fetch
-      logStep(2, "Making cross-chain payment");
+      logStep(2, "Realizando pago cross-chain");
       const paidResponse = await fetchWithPay(RELAY_URL, {
         method: "POST",
         headers: {
