@@ -18,8 +18,8 @@ async function testClient() {
   }
 
   console.log();
-  console.log(kleur.bold().cyan("Demo 01: Gloria AI - Pago x402 Básico"));
-  console.log(kleur.bold().white("Solicitud GET con pago automático de USDC en Base"));
+  console.log(kleur.bold().cyan("Demo 01: Truecast - Pago x402 Básico"));
+  console.log(kleur.bold().white("Solicitud POST con pago automático de USDC en Base"));
   console.log();
 
   logInfo("Private key detected", PRIVATE_KEY ? "✓" : "✗");
